@@ -27,6 +27,9 @@ Web de seguimiento de visitas para negocios de reparto de mercancía. Permite sa
 - Mantener bajo el límite de free tier de Cloudflare (100k requests/día)
 - Preferir `Response` nativo de Hono sobre `new Response()` directo
 - Archivos de ruta nuevos van en `src/` con sufijo `.tsx`
+- NUNCA ejecutar `npm install`, `npm run dev` ni ningún comando local
+- Todo el desarrollo se hace exclusivamente en Cloudflare (dashboard + deploy vía GitHub)
+- Los cambios se suben a GitHub y Cloudflare Pages los compila automáticamente
 
 ## Guías Avanzadas (divulgación progresiva)
 Para tareas específicas, leer el archivo correspondiente:
