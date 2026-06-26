@@ -1,5 +1,8 @@
 import { Hono } from 'hono'
 import type { Variables } from '../lib/engine'
+import Navbar from '../components/Navbar'
+import Hero from '../components/Hero'
+import Footer from '../components/Footer'
 
 const router = new Hono<{ Variables: Variables }>()
 
@@ -7,10 +10,11 @@ router.get('/', (c) => {
   const t = c.get('t')
 
   return c.render(
-    <main>
-      <h1>{t('home_welcome')}</h1>
-      <p>{t('tagline')}</p>
-    </main>,
+    <div>
+      <Navbar t={t} />
+      <Hero t={t} />
+      <Footer t={t} />
+    </div>,
     { title: t('home_title') }
   )
 })
