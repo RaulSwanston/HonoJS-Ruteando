@@ -13,8 +13,8 @@ export function rateLimit(action: string, maxAttempts = 5, windowSeconds = 60): 
       c.status(429)
       return c.render(
         <div>
-          <h1>429 - Too Many Requests</h1>
-          <p>Please wait before trying again.</p>
+            <h1>{'429 - Too Many Requests'}</h1>
+            <p>Please wait before trying again.</p>
           <a href="/auth/login">Back to sign in</a>
         </div>,
         { title: 'Too Many Requests' }
