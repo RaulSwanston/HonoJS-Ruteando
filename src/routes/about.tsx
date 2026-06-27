@@ -7,10 +7,11 @@ const router = new Hono<{ Variables: Variables }>()
 
 router.get('/about', (c) => {
   const t = c.get('t')
+  const user = c.get('user')
 
   return c.render(
     <div>
-      <Navbar t={t} />
+      <Navbar t={t} user={user} />
       <main>
         <h1>{t('about_title')}</h1>
       </main>
