@@ -7,6 +7,8 @@ import about from './routes/about'
 import register from './routes/auth/register'
 import login from './routes/auth/login'
 import logout from './routes/auth/logout'
+import forgotPassword from './routes/auth/forgot-password'
+import resetPassword from './routes/auth/reset-password'
 
 type Bindings = {
   DB: D1Database
@@ -36,5 +38,7 @@ app.route('/', about)
 app.route('/auth', register)
 app.route('/auth', login)
 app.route('/auth', logout)
+app.route('/auth', forgotPassword)
+app.route('/auth', resetPassword)
 
 export default app

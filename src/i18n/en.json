@@ -28,5 +28,17 @@
   "or_continue_with": "Or continue with",
   "login_google": "Google",
   "login_github": "GitHub",
-  "login_apple": "Apple"
+  "login_apple": "Apple",
+  "forgot_password": "Forgot your password?",
+  "send_reset_link": "Send reset link",
+  "back_to_login": "Back to sign in",
+  "reset_link_sent": "Reset link",
+  "debug_mode_hint": "Debug mode: copy this link into your browser to reset your password.",
+  "check_email_reset": "If that email is registered, you'll receive a reset link.",
+  "reset_password": "Reset password",
+  "new_password": "New password",
+  "update_password": "Update password",
+  "invalid_reset_token": "This link is invalid or has expired.",
+  "password_updated": "Password updated",
+  "password_updated_hint": "Your password has been updated. Sign in with your new password."
 }

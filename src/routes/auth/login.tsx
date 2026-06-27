@@ -33,6 +33,7 @@ router.get('/login', (c) => {
           <input type="password" id="password" name="password" required />
         </div>
         <button type="submit">{t('login')}</button>
+        <p><a href="/auth/forgot-password">{t('forgot_password')}</a></p>
       </form>
 
       <hr />
