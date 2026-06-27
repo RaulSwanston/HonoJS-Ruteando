@@ -22,7 +22,33 @@
 - `AGENTS.md` — reglas actualizadas (prohibido npm install/comandos locales)
 
 ### Próximos pasos
-- [ ] Crear componentes: Navbar, Hero, Footer
-- [ ] Mejorar landing page con diseño real
+- [x] Crear componentes: Navbar, Hero, Footer
+- [ ] Dar estilo a la landing page (CSS)
+- [ ] Crear ruta /contacto
 - [ ] Conectar D1 cuando sea necesario
-- [ ] Hacer deploy vía push a GitHub
+
+## Sesión 2 — 2026-06-26
+
+### Decisiones técnicas
+- Se definió la arquitectura multi-negocio (multi-tenant).
+- La entidad se llama **business** en código, "negocio" en conversación.
+- Autenticación: sesiones en KV, cuentas vinculables, OAuth (Google + GitHub + Apple).
+- Mínimas dependencias externas — priorizar Web Crypto nativo, solo instalar si es estrictamente necesario.
+- API pública planeada bajo `/api/v1/`.
+- Roles dentro de un negocio: admin (dueño), staff (empleado), consumer (cliente del negocio).
+
+### Archivos creados
+- `migrations/001_init.sql` — esquema D1 (users, businesses, business_members, branches)
+- `src/models/users.ts` — CRUD de usuarios
+- `src/models/businesses.ts` — CRUD de negocios + miembros
+- `src/models/branches.ts` — CRUD de sucursales
+- `docs/architecture.md` — actualizado con la arquitectura actual
+
+### Próximos pasos
+- [x] Implementar `lib/crypto.ts` y `lib/session.ts`
+- [x] Implementar middleware de auth
+- [x] Implementar rutas de auth (registro, login, logout)
+- [ ] Implementar OAuth (Google, GitHub, Apple)
+- [ ] Implementar vista de perfil de usuario (editar nombre, avatar)
+- [ ] Implementar eliminación de cuenta (soft delete)
+- [ ] Conectar D1, KV y Secrets en dashboard + wrangler.jsonc

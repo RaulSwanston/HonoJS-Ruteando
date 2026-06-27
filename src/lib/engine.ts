@@ -10,6 +10,9 @@ export type Variables = {
   config: Config
   lang: Language
   t: (key: TranslationKey) => string
+  user: import('../models/users').User | null
+  sessionId: string | null
+  csrfToken: string
 }
 
 const translations: Record<Language, Record<string, string>> = { es, en }
