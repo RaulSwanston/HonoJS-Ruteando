@@ -40,5 +40,6 @@
   "update_password": "Actualizar contraseña",
   "invalid_reset_token": "Este enlace es inválido o ya expiró.",
   "password_updated": "Contraseña actualizada",
-  "password_updated_hint": "Tu contraseña se actualizó correctamente. Inicia sesión con tu nueva contraseña."
+  "password_updated_hint": "Tu contraseña se actualizó correctamente. Inicia sesión con tu nueva contraseña.",
+  "back_to_home": "Volver al inicio"
 }

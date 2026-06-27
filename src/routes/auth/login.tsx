@@ -46,6 +46,7 @@ router.get('/login', (c) => {
       <p>
         {t('no_account')} <a href="/auth/register">{t('register')}</a>
       </p>
+      <p><a href="/">{t('back_to_home')}</a></p>
     </div>,
     { title: t('login_title') }
   )
