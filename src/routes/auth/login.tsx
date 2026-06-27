@@ -3,6 +3,7 @@ import type { Variables } from '../../lib/engine'
 import { createSession, setCookieHeader } from '../../lib/session'
 import { verifyPassword } from '../../lib/crypto'
 import { getUserByEmail } from '../../models/users'
+import { rateLimit, resetRateLimit, getClientIp } from '../../middleware/rateLimit'
 
 type AuthBindings = {
   DB: D1Database
@@ -32,9 +33,18 @@ router.get('/login', (c) => {
           <label for="password">{t('password')}</label>
           <input type="password" id="password" name="password" required />
         </div>
-        <button type="submit">{t('login')}</button>
+        <button type="submit" id="submit-btn">{t('login')}</button>
         <p><a href="/auth/forgot-password">{t('forgot_password')}</a></p>
       </form>
+
+      <script dangerouslySetInnerHTML={{
+        __html: `
+          document.getElementById('submit-btn')?.addEventListener('click', function() {
+            this.disabled = true;
+            this.textContent = '${t('processing')}';
+          });
+        `
+      }} />
 
       <hr />
 
@@ -52,8 +62,9 @@ router.get('/login', (c) => {
   )
 })
 
-router.post('/login', async (c) => {
+router.post('/login', rateLimit('login'), async (c) => {
   const t = c.get('t')
+  const ip = getClientIp(c)
   const body = await c.req.parseBody()
   const email = (body.email as string)?.trim().toLowerCase()
   const password = body.password as string
@@ -90,6 +101,7 @@ router.post('/login', async (c) => {
     )
   }
 
+  await resetRateLimit(c.env.SESSION_KV, 'login', ip)
   const cookie = await createSession(c.env.SESSION_KV, c.env.SESSION_SECRET, user.id, user.role)
   c.header('Set-Cookie', setCookieHeader(cookie))
   return c.redirect('/')

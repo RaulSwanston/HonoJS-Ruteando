@@ -41,5 +41,6 @@
   "invalid_reset_token": "This link is invalid or has expired.",
   "password_updated": "Password updated",
   "password_updated_hint": "Your password has been updated. Sign in with your new password.",
-  "back_to_home": "Back to home"
+  "back_to_home": "Back to home",
+  "processing": "Processing..."
 }
