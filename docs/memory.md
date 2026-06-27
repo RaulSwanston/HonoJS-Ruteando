@@ -79,4 +79,6 @@
 
 ### Próximos pasos (corto plazo)
 - [ ] Conexión de rutas OAuth (Google, GitHub, Apple)
-- [ ] Rate limiting en formularios de auth
+- [ ] Dashboard post-login
+- [ ] Perfil de usuario (editar nombre, avatar, teléfono)
+- [ ] Eliminación de cuenta desde UI
