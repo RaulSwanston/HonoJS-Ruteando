@@ -77,8 +77,45 @@
 - [ ] API endpoints (`/api/v1/`)
 - [ ] Tests
 
-### Próximos pasos (corto plazo)
-- [ ] Conexión de rutas OAuth (Google, GitHub, Apple)
-- [ ] Dashboard post-login
-- [ ] Perfil de usuario (editar nombre, avatar, teléfono)
+## Sesión 3 — 2026-06-28
+
+### Decisiones técnicas
+- Migración completa a **Firebase Auth** para email/contraseña + Google + Apple
+- Firebase SDK cargado vía CDN (`www.gstatic.com`) sin npm dependencies
+- Server-side JWT verification con Web Crypto + JWKS endpoint de Google
+- Sesiones en KV se mantienen igual (sin cambios)
+- Dashboard + perfil de usuario creados (rutas protegidas con `requireAuth`)
+- Columna `password_hash` eliminada de D1 (migración 002)
+
+### Archivos creados
+- `src/lib/firebase.ts` — config Firebase + verifyFirebaseIdToken (Web Crypto)
+- `src/routes/auth/firebase.tsx` — POST /auth/firebase (exchange ID token → sesión KV)
+- `src/components/DashboardLayout.tsx` — Layout dashboard con sidebar
+- `src/routes/dashboard/index.tsx` — GET /dashboard (panel principal)
+- `src/routes/dashboard/profile.tsx` — GET+POST /dashboard/profile (editar nombre/avatar)
+- `migrations/002_drop_password_hash.sql` — DROP COLUMN password_hash
+
+### Archivos modificados
+- `src/routes/auth/login.tsx` — login vía Firebase (email/password + OAuth) con fallback legacy
+- `src/routes/auth/register.tsx` — registro vía Firebase con `sendEmailVerification`
+- `src/models/users.ts` — eliminado password_hash del tipo e INSERT
+- `src/index.tsx` — monta rutas dashboard + firebase
+- `src/lib/engine.ts` — t() con interpolación ({0})
+- `src/i18n/es.json` / `src/i18n/en.json` — claves dashboard, perfil
+- `src/components/Navbar.tsx` — link a dashboard
+- `README.md` — alineado con AGENTS.md
+
+### Deuda técnica actualizada
+- [x] ~~OAuth real~~ → Firebase OAuth (Google + Apple funcional)
+- [x] ~~Dashboard post-login~~ → creado en /dashboard
+- [x] ~~Perfil de usuario~~ → creado en /dashboard/profile
+- [x] ~~Email sending~~ → Firebase sendEmailVerification funcional
+- [x] ~~Verificación de email~~ → Firebase envía email de verificación
+- [ ] **UTF-8 names** — los nombres con tildes/acentos se guardan corruptos en D1 (ej: "raúl" → "ra�l"). Posible causa: `atob()` en verifyFirebaseIdToken no maneja UTF-8 correctamente.
+- [ ] Recuperación de contraseña — pendiente migrar a Firebase sendPasswordResetEmail
 - [ ] Eliminación de cuenta desde UI
+- [ ] CSRF tokens
+- [ ] Rate limiting (actualmente solo legacy)
+- [ ] Contexto de negocio + selector
+- [ ] API endpoints /api/v1/
+- [ ] Tests
