@@ -5,7 +5,6 @@ export type UserRole = 'super_admin' | 'user'
 export interface User {
   id: string
   email: string
-  password_hash: string | null
   name: string
   avatar_url: string | null
   role: UserRole
@@ -18,7 +17,6 @@ export interface CreateUserInput {
   id: string
   email: string
   name: string
-  password_hash?: string
   avatar_url?: string
 }
 
@@ -39,10 +37,10 @@ export async function getUserByEmail(db: D1Database, email: string): Promise<Use
 export async function createUser(db: D1Database, input: CreateUserInput): Promise<User> {
   await db
     .prepare(
-      `INSERT INTO users (id, email, password_hash, name, avatar_url)
-       VALUES (?, ?, ?, ?, ?)`
+      `INSERT INTO users (id, email, name, avatar_url)
+       VALUES (?, ?, ?, ?)`
     )
-    .bind(input.id, input.email, input.password_hash ?? null, input.name, input.avatar_url ?? null)
+    .bind(input.id, input.email, input.name, input.avatar_url ?? null)
     .run()
 
   return (await getUserById(db, input.id))!

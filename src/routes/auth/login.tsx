@@ -1,18 +1,8 @@
 import { Hono } from 'hono'
 import type { Variables } from '../../lib/engine'
-import { createSession, setCookieHeader } from '../../lib/session'
-import { verifyPassword } from '../../lib/crypto'
-import { getUserByEmail } from '../../models/users'
-import { rateLimit, resetRateLimit, getClientIp } from '../../middleware/rateLimit'
 import { firebaseConfig } from '../../lib/firebase'
 
-type AuthBindings = {
-  DB: D1Database
-  SESSION_KV: KVNamespace
-  SESSION_SECRET: string
-}
-
-const router = new Hono<{ Bindings: AuthBindings; Variables: Variables }>()
+const router = new Hono<{ Variables: Variables }>()
 
 router.get('/login', (c) => {
   const t = c.get('t')
@@ -27,7 +17,7 @@ router.get('/login', (c) => {
 
       <p id="login-error" style="color:red;display:none"></p>
 
-      <form id="login-form" method="POST" action="/auth/login" novalidate>
+      <form id="login-form" novalidate>
         <div>
           <label for="email">{t('email')}</label>
           <input type="email" id="email" name="email" required />
@@ -84,14 +74,10 @@ router.get('/login', (c) => {
               document.body.appendChild(redirectForm)
               redirectForm.submit()
             } catch (err) {
-              if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
-                form.submit()
-              } else {
-                errorEl.textContent = err.message
-                errorEl.style.display = 'block'
-                submitBtn.disabled = false
-                submitBtn.textContent = '${t('login')}'
-              }
+              errorEl.textContent = '${t('invalid_credentials')}'
+              errorEl.style.display = 'block'
+              submitBtn.disabled = false
+              submitBtn.textContent = '${t('login')}'
             }
           })
 
@@ -133,49 +119,8 @@ router.get('/login', (c) => {
   )
 })
 
-router.post('/login', rateLimit('login'), async (c) => {
-  const t = c.get('t')
-  const ip = getClientIp(c)
-  const body = await c.req.parseBody()
-  const email = (body.email as string)?.trim().toLowerCase()
-  const password = body.password as string
-
-  if (!email || !password) {
-    return c.render(
-      <div>
-        <p style="color:red">{t('all_fields_required')}</p>
-        <a href="/auth/login">{t('go_back')}</a>
-      </div>,
-      { title: t('login_error') }
-    )
-  }
-
-  const user = await getUserByEmail(c.env.DB, email)
-  if (!user || !user.password_hash) {
-    return c.render(
-      <div>
-        <p style="color:red">{t('invalid_credentials')}</p>
-        <a href="/auth/login">{t('go_back')}</a>
-      </div>,
-      { title: t('login_error') }
-    )
-  }
-
-  const valid = await verifyPassword(password, user.password_hash)
-  if (!valid) {
-    return c.render(
-      <div>
-        <p style="color:red">{t('invalid_credentials')}</p>
-        <a href="/auth/login">{t('go_back')}</a>
-      </div>,
-      { title: t('login_error') }
-    )
-  }
-
-  await resetRateLimit(c.env.SESSION_KV, 'login', ip)
-  const cookie = await createSession(c.env.SESSION_KV, c.env.SESSION_SECRET, user.id, user.role)
-  c.header('Set-Cookie', setCookieHeader(cookie))
-  return c.redirect('/dashboard')
+router.post('/login', (c) => {
+  return c.redirect('/auth/login')
 })
 
 export default router
