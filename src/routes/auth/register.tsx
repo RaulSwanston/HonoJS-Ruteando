@@ -1,18 +1,8 @@
 import { Hono } from 'hono'
 import type { Variables } from '../../lib/engine'
-import { createSession, setCookieHeader } from '../../lib/session'
-import { hashPassword } from '../../lib/crypto'
-import { getUserByEmail, createUser } from '../../models/users'
-import { rateLimit, resetRateLimit, getClientIp } from '../../middleware/rateLimit'
 import { firebaseConfig } from '../../lib/firebase'
 
-type AuthBindings = {
-  DB: D1Database
-  SESSION_KV: KVNamespace
-  SESSION_SECRET: string
-}
-
-const router = new Hono<{ Bindings: AuthBindings; Variables: Variables }>()
+const router = new Hono<{ Variables: Variables }>()
 
 router.get('/register', (c) => {
   const t = c.get('t')
@@ -20,7 +10,10 @@ router.get('/register', (c) => {
   return c.render(
     <div>
       <h1>{t('register_title')}</h1>
-      <form method="POST" action="/auth/register" novalidate>
+
+      <p id="register-error" style="color:red;display:none"></p>
+
+      <form id="register-form" novalidate>
         <div>
           <label for="name">{t('name')}</label>
           <input type="text" id="name" name="name" required minlength={2} />
@@ -36,15 +29,6 @@ router.get('/register', (c) => {
         <button type="submit" id="submit-btn">{t('register')}</button>
       </form>
 
-      <script dangerouslySetInnerHTML={{
-        __html: `
-          document.getElementById('submit-btn')?.addEventListener('click', function() {
-            this.disabled = true;
-            this.textContent = '${t('processing')}';
-          });
-        `
-      }} />
-
       <hr />
 
       <p>{t('or_continue_with')}</p>
@@ -56,32 +40,91 @@ router.get('/register', (c) => {
       <script type="module" dangerouslySetInnerHTML={{
         __html: `
           import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js"
-          import { getAuth, signInWithPopup, GoogleAuthProvider, OAuthProvider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js"
+          import { getAuth, createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider, OAuthProvider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js"
 
           const app = initializeApp(${JSON.stringify(firebaseConfig)})
           const auth = getAuth(app)
 
-          const errorEl = document.getElementById('oauth-error')
+          const form = document.getElementById('register-form')
+          const submitBtn = document.getElementById('submit-btn')
+          const errorEl = document.getElementById('register-error')
 
-          async function handleOAuth(provider) {
+          form.addEventListener('submit', async (e) => {
+            e.preventDefault()
             errorEl.style.display = 'none'
+            submitBtn.disabled = true
+            submitBtn.textContent = '${t('processing')}'
+
+            const name = document.getElementById('name').value.trim()
+            const email = document.getElementById('email').value.trim()
+            const password = document.getElementById('password').value
+
+            if (!name || !email || !password) {
+              errorEl.textContent = '${t('all_fields_required')}'
+              errorEl.style.display = 'block'
+              submitBtn.disabled = false
+              submitBtn.textContent = '${t('register')}'
+              return
+            }
+
+            if (password.length < 8) {
+              errorEl.textContent = '${t('password_too_short')}'
+              errorEl.style.display = 'block'
+              submitBtn.disabled = false
+              submitBtn.textContent = '${t('register')}'
+              return
+            }
+
             try {
-              const result = await signInWithPopup(auth, provider)
-              const idToken = await result.user.getIdToken()
-              const form = document.createElement('form')
-              form.method = 'POST'
-              form.action = '/auth/firebase'
+              const result = await createUserWithEmailAndPassword(auth, email, password)
+              await updateProfile(result.user, { displayName: name })
+              const idToken = await result.user.getIdToken(true)
+
+              const redirectForm = document.createElement('form')
+              redirectForm.method = 'POST'
+              redirectForm.action = '/auth/firebase'
               const input = document.createElement('input')
               input.type = 'hidden'
               input.name = 'idToken'
               input.value = idToken
-              form.appendChild(input)
-              document.body.appendChild(form)
-              form.submit()
+              redirectForm.appendChild(input)
+              document.body.appendChild(redirectForm)
+              redirectForm.submit()
+            } catch (err) {
+              if (err.code === 'auth/email-already-in-use') {
+                errorEl.textContent = '${t('email_exists')}'
+              } else if (err.code === 'auth/weak-password') {
+                errorEl.textContent = '${t('password_too_short')}'
+              } else {
+                errorEl.textContent = err.message
+              }
+              errorEl.style.display = 'block'
+              submitBtn.disabled = false
+              submitBtn.textContent = '${t('register')}'
+            }
+          })
+
+          const oauthErrorEl = document.getElementById('oauth-error')
+
+          async function handleOAuth(provider) {
+            oauthErrorEl.style.display = 'none'
+            try {
+              const result = await signInWithPopup(auth, provider)
+              const idToken = await result.user.getIdToken()
+              const redirectForm = document.createElement('form')
+              redirectForm.method = 'POST'
+              redirectForm.action = '/auth/firebase'
+              const input = document.createElement('input')
+              input.type = 'hidden'
+              input.name = 'idToken'
+              input.value = idToken
+              redirectForm.appendChild(input)
+              document.body.appendChild(redirectForm)
+              redirectForm.submit()
             } catch (err) {
               if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return
-              errorEl.textContent = err.message
-              errorEl.style.display = 'block'
+              oauthErrorEl.textContent = err.message
+              oauthErrorEl.style.display = 'block'
             }
           }
 
@@ -97,56 +140,6 @@ router.get('/register', (c) => {
     </div>,
     { title: t('register_title') }
   )
-})
-
-router.post('/register', rateLimit('register'), async (c) => {
-  const t = c.get('t')
-  const ip = getClientIp(c)
-  const body = await c.req.parseBody()
-  const name = (body.name as string)?.trim()
-  const email = (body.email as string)?.trim().toLowerCase()
-  const password = body.password as string
-
-  if (!name || !email || !password) {
-    return c.render(
-      <div>
-        <p style="color:red">{t('all_fields_required')}</p>
-        <a href="/auth/register">{t('go_back')}</a>
-      </div>,
-      { title: t('register_error') }
-    )
-  }
-
-  if (password.length < 8) {
-    return c.render(
-      <div>
-        <p style="color:red">{t('password_too_short')}</p>
-        <a href="/auth/register">{t('go_back')}</a>
-      </div>,
-      { title: t('register_error') }
-    )
-  }
-
-  const existing = await getUserByEmail(c.env.DB, email)
-  if (existing) {
-    return c.render(
-      <div>
-        <p style="color:red">{t('email_exists')}</p>
-        <a href="/auth/register">{t('go_back')}</a>
-      </div>,
-      { title: t('register_error') }
-    )
-  }
-
-  const id = crypto.randomUUID()
-  const passwordHash = await hashPassword(password)
-
-  const user = await createUser(c.env.DB, { id, email, name, password_hash: passwordHash })
-  await resetRateLimit(c.env.SESSION_KV, 'register', ip)
-  const cookie = await createSession(c.env.SESSION_KV, c.env.SESSION_SECRET, user.id, user.role)
-
-  c.header('Set-Cookie', setCookieHeader(cookie))
-  return c.redirect('/dashboard')
 })
 
 export default router

@@ -25,7 +25,9 @@ router.get('/login', (c) => {
     <div>
       <h1>{t('login_title')}</h1>
 
-      <form method="POST" action="/auth/login" novalidate>
+      <p id="login-error" style="color:red;display:none"></p>
+
+      <form id="login-form" method="POST" action="/auth/login" novalidate>
         <div>
           <label for="email">{t('email')}</label>
           <input type="email" id="email" name="email" required />
@@ -38,15 +40,6 @@ router.get('/login', (c) => {
         <p><a href="/auth/forgot-password">{t('forgot_password')}</a></p>
       </form>
 
-      <script dangerouslySetInnerHTML={{
-        __html: `
-          document.getElementById('submit-btn')?.addEventListener('click', function() {
-            this.disabled = true;
-            this.textContent = '${t('processing')}';
-          });
-        `
-      }} />
-
       <hr />
 
       <p>{t('or_continue_with')}</p>
@@ -58,32 +51,71 @@ router.get('/login', (c) => {
       <script type="module" dangerouslySetInnerHTML={{
         __html: `
           import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js"
-          import { getAuth, signInWithPopup, GoogleAuthProvider, OAuthProvider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js"
+          import { getAuth, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, OAuthProvider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js"
 
           const app = initializeApp(${JSON.stringify(firebaseConfig)})
           const auth = getAuth(app)
 
-          const errorEl = document.getElementById('oauth-error')
+          const form = document.getElementById('login-form')
+          const submitBtn = document.getElementById('submit-btn')
+          const errorEl = document.getElementById('login-error')
 
-          async function handleOAuth(provider) {
+          form.addEventListener('submit', async (e) => {
+            const email = document.getElementById('email').value.trim()
+            const password = document.getElementById('password').value
+            if (!email || !password) return
+
+            e.preventDefault()
             errorEl.style.display = 'none'
+            submitBtn.disabled = true
+            submitBtn.textContent = '${t('processing')}'
+
             try {
-              const result = await signInWithPopup(auth, provider)
+              const result = await signInWithEmailAndPassword(auth, email, password)
               const idToken = await result.user.getIdToken()
-              const form = document.createElement('form')
-              form.method = 'POST'
-              form.action = '/auth/firebase'
+              const redirectForm = document.createElement('form')
+              redirectForm.method = 'POST'
+              redirectForm.action = '/auth/firebase'
               const input = document.createElement('input')
               input.type = 'hidden'
               input.name = 'idToken'
               input.value = idToken
-              form.appendChild(input)
-              document.body.appendChild(form)
-              form.submit()
+              redirectForm.appendChild(input)
+              document.body.appendChild(redirectForm)
+              redirectForm.submit()
+            } catch (err) {
+              if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+                form.submit()
+              } else {
+                errorEl.textContent = err.message
+                errorEl.style.display = 'block'
+                submitBtn.disabled = false
+                submitBtn.textContent = '${t('login')}'
+              }
+            }
+          })
+
+          const oauthErrorEl = document.getElementById('oauth-error')
+
+          async function handleOAuth(provider) {
+            oauthErrorEl.style.display = 'none'
+            try {
+              const result = await signInWithPopup(auth, provider)
+              const idToken = await result.user.getIdToken()
+              const redirectForm = document.createElement('form')
+              redirectForm.method = 'POST'
+              redirectForm.action = '/auth/firebase'
+              const input = document.createElement('input')
+              input.type = 'hidden'
+              input.name = 'idToken'
+              input.value = idToken
+              redirectForm.appendChild(input)
+              document.body.appendChild(redirectForm)
+              redirectForm.submit()
             } catch (err) {
               if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return
-              errorEl.textContent = err.message
-              errorEl.style.display = 'block'
+              oauthErrorEl.textContent = err.message
+              oauthErrorEl.style.display = 'block'
             }
           }
 
