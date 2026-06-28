@@ -40,7 +40,7 @@ router.get('/register', (c) => {
       <script type="module" dangerouslySetInnerHTML={{
         __html: `
           import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js"
-          import { getAuth, createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider, OAuthProvider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js"
+          import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification, signInWithPopup, GoogleAuthProvider, OAuthProvider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js"
 
           const app = initializeApp(${JSON.stringify(firebaseConfig)})
           const auth = getAuth(app)
@@ -78,6 +78,7 @@ router.get('/register', (c) => {
             try {
               const result = await createUserWithEmailAndPassword(auth, email, password)
               await updateProfile(result.user, { displayName: name })
+              await sendEmailVerification(result.user)
               const idToken = await result.user.getIdToken(true)
 
               const redirectForm = document.createElement('form')
