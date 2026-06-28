@@ -42,5 +42,11 @@
   "password_updated": "Password updated",
   "password_updated_hint": "Your password has been updated. Sign in with your new password.",
   "back_to_home": "Back to home",
-  "processing": "Processing..."
+  "processing": "Processing...",
+  "dashboard_overview": "Dashboard",
+  "dashboard_profile": "My Profile",
+  "dashboard_welcome": "Welcome, {0}",
+  "save_changes": "Save changes",
+  "email_cannot_change": "Email cannot be changed",
+  "avatar_url": "Avatar URL"
 }

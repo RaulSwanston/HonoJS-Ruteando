@@ -9,7 +9,7 @@ export type TranslationKey = keyof typeof es
 export type Variables = {
   config: Config
   lang: Language
-  t: (key: TranslationKey) => string
+  t: (key: TranslationKey, ...args: string[]) => string
   user: import('../models/users').User | null
   sessionId: string | null
   csrfToken: string
@@ -24,5 +24,8 @@ export const getLanguage = (acceptLanguage?: string): Language => {
   return configData.defaultLang as Language
 }
 
-export const t = (key: TranslationKey, lang: Language): string =>
-  translations[lang]?.[key] ?? key
+export const t = (key: TranslationKey, lang: Language, ...args: string[]): string => {
+  let msg = translations[lang]?.[key] ?? key
+  args.forEach((arg, i) => { msg = msg.replace(`{${i}}`, arg) })
+  return msg
+}

@@ -4,6 +4,7 @@ import { createSession, setCookieHeader } from '../../lib/session'
 import { verifyPassword } from '../../lib/crypto'
 import { getUserByEmail } from '../../models/users'
 import { rateLimit, resetRateLimit, getClientIp } from '../../middleware/rateLimit'
+import { firebaseConfig } from '../../lib/firebase'
 
 type AuthBindings = {
   DB: D1Database
@@ -17,7 +18,7 @@ router.get('/login', (c) => {
   const t = c.get('t')
 
   if (c.get('user')) {
-    return c.redirect('/')
+    return c.redirect('/dashboard')
   }
 
   return c.render(
@@ -49,9 +50,47 @@ router.get('/login', (c) => {
       <hr />
 
       <p>{t('or_continue_with')}</p>
-      <a href="/auth/google">{t('login_google')}</a>
-      <a href="/auth/github">{t('login_github')}</a>
-      <a href="/auth/apple">{t('login_apple')}</a>
+      <button id="btn-google" class="oauth-btn">{t('login_google')}</button>
+      <button id="btn-apple" class="oauth-btn">{t('login_apple')}</button>
+
+      <p id="oauth-error" style="color:red;display:none"></p>
+
+      <script type="module" dangerouslySetInnerHTML={{
+        __html: `
+          import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js"
+          import { getAuth, signInWithPopup, GoogleAuthProvider, OAuthProvider } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js"
+
+          const app = initializeApp(${JSON.stringify(firebaseConfig)})
+          const auth = getAuth(app)
+
+          const errorEl = document.getElementById('oauth-error')
+
+          async function handleOAuth(provider) {
+            errorEl.style.display = 'none'
+            try {
+              const result = await signInWithPopup(auth, provider)
+              const idToken = await result.user.getIdToken()
+              const form = document.createElement('form')
+              form.method = 'POST'
+              form.action = '/auth/firebase'
+              const input = document.createElement('input')
+              input.type = 'hidden'
+              input.name = 'idToken'
+              input.value = idToken
+              form.appendChild(input)
+              document.body.appendChild(form)
+              form.submit()
+            } catch (err) {
+              if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return
+              errorEl.textContent = err.message
+              errorEl.style.display = 'block'
+            }
+          }
+
+          document.getElementById('btn-google')?.addEventListener('click', () => handleOAuth(new GoogleAuthProvider()))
+          document.getElementById('btn-apple')?.addEventListener('click', () => handleOAuth(new OAuthProvider('apple.com')))
+        `
+      }} />
 
       <p>
         {t('no_account')} <a href="/auth/register">{t('register')}</a>
@@ -104,7 +143,7 @@ router.post('/login', rateLimit('login'), async (c) => {
   await resetRateLimit(c.env.SESSION_KV, 'login', ip)
   const cookie = await createSession(c.env.SESSION_KV, c.env.SESSION_SECRET, user.id, user.role)
   c.header('Set-Cookie', setCookieHeader(cookie))
-  return c.redirect('/')
+  return c.redirect('/dashboard')
 })
 
 export default router

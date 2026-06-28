@@ -42,5 +42,11 @@
   "password_updated": "Contraseña actualizada",
   "password_updated_hint": "Tu contraseña se actualizó correctamente. Inicia sesión con tu nueva contraseña.",
   "back_to_home": "Volver al inicio",
-  "processing": "Procesando..."
+  "processing": "Procesando...",
+  "dashboard_overview": "Panel principal",
+  "dashboard_profile": "Mi perfil",
+  "dashboard_welcome": "Bienvenido, {0}",
+  "save_changes": "Guardar cambios",
+  "email_cannot_change": "El correo no se puede cambiar",
+  "avatar_url": "URL del avatar"
 }

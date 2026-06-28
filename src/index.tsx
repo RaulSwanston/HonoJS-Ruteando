@@ -9,6 +9,9 @@ import login from './routes/auth/login'
 import logout from './routes/auth/logout'
 import forgotPassword from './routes/auth/forgot-password'
 import resetPassword from './routes/auth/reset-password'
+import firebase from './routes/auth/firebase'
+import dashboard from './routes/dashboard/index'
+import profile from './routes/dashboard/profile'
 
 type Bindings = {
   DB: D1Database
@@ -24,7 +27,7 @@ app.use('*', async (c, next) => {
 
   c.set('config', config)
   c.set('lang', lang)
-  c.set('t', (key) => t(key, lang))
+  c.set('t', (key, ...args) => t(key, lang, ...args))
 
   await next()
 })
@@ -40,5 +43,8 @@ app.route('/auth', login)
 app.route('/auth', logout)
 app.route('/auth', forgotPassword)
 app.route('/auth', resetPassword)
+app.route('/auth', firebase)
+app.route('/', dashboard)
+app.route('/', profile)
 
 export default app

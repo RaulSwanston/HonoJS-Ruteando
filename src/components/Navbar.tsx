@@ -2,7 +2,7 @@ import type { TranslationKey } from '../lib/engine'
 import type { User } from '../models/users'
 
 type Props = {
-  t: (key: TranslationKey) => string
+  t: (key: TranslationKey, ...args: string[]) => string
   user: User | null
 }
 
@@ -15,6 +15,7 @@ export default function Navbar({ t, user }: Props) {
       <a href="/contacto">{t('nav_contacto')}</a>
       {user ? (
         <span>
+          <a href="/dashboard">{t('dashboard_overview')}</a>
           {user.name}
           <a href="/auth/logout">{t('logout')}</a>
         </span>

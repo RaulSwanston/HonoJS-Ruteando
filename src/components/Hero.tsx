@@ -1,7 +1,7 @@
 import type { TranslationKey } from '../lib/engine'
 
 type Props = {
-  t: (key: TranslationKey) => string
+  t: (key: TranslationKey, ...args: string[]) => string
 }
 
 export default function Hero({ t }: Props) {
